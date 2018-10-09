@@ -1,11 +1,11 @@
-var caseless = require('caseless');
-
 var _cl = null;
 try {
   _cl = require('./build/Release/httpSync.node');
 } catch (error) {}
 
 if (_cl) {
+    var caseless = require('caseless');
+
     var curllib = new _cl.CurlLib();
 
     function CurlRequest(options) {
