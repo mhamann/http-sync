@@ -2,7 +2,7 @@ var caseless = require('caseless');
 
 var _cl = null;
 try {
-  _cl = require('./build/Release/curllib.node');
+  _cl = require('./build/Release/httpSync.node');
 } catch (error) {}
 
 if (_cl) {
