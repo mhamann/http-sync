@@ -17,6 +17,8 @@
 				    "<!(node -e \"require('nan')\")",
 				    "<!(node -e \"console.log(require.resolve('libcurl.a').slice(0, -9) + '/include')\")",
 			    ],
+          "conditions" : [
+          'defines': ['LUMIN'],
 			  }],
 			],
     },
