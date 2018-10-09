@@ -7,6 +7,9 @@
 			    'sources' : [
 		  	    'curllib.cc',
 			    ],
+			    'include_dirs': [
+		        "<!(node -e \"console.log(require.resolve('libcurl.a').slice(0, -9) + '/include')\")",
+		      ],
 			    'library_dirs': [
 		        "<!(node -e \"console.log(require.resolve('libcurl.a').slice(0, -9) + '/lib')\")",
 		      ],
