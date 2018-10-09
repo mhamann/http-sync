@@ -157,5 +157,7 @@ if (_cl) {
 
         return new CurlRequest(options);
     };
+} else {
+  module.exports = null;
 }
 
