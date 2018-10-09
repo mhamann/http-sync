@@ -17,10 +17,10 @@ using namespace node;
 using namespace v8;
 
 #define THROW_BAD_ARGS \
-  NanThrowTypeError("Bad argument")
+  Nan::ThrowTypeError("Bad argument")
 
 #define PERSISTENT_STRING(id, text) \
-  NanAssignPersistent<String>(id, NanNew<String>(text))
+  id.Reset(Nan::New<String>(text).ToLocalChecked())
 
 typedef std::vector<char> buff_t;
 
@@ -28,24 +28,24 @@ class CurlLib : ObjectWrap {
 private:
   static std::string buffer;
   static std::vector<std::string> headers;
-  static Persistent<String> sym_body_length;
-  static Persistent<String> sym_headers;
-  static Persistent<String> sym_timedout;
-  static Persistent<String> sym_error;
+  static Nan::Persistent<String> sym_body_length;
+  static Nan::Persistent<String> sym_headers;
+  static Nan::Persistent<String> sym_timedout;
+  static Nan::Persistent<String> sym_error;
 
 public:
-  static Persistent<Function> s_constructor;
+  static Nan::Persistent<Function> s_constructor;
   static void Init(Handle<Object> target) {
-    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+    Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
 
     t->InstanceTemplate()->SetInternalFieldCount(1);
-    t->SetClassName(NanNew<String>("CurlLib"));
+    t->SetClassName(Nan::New<String>("CurlLib").ToLocalChecked());
 
-    NODE_SET_PROTOTYPE_METHOD(t, "run", Run);
-    NODE_SET_PROTOTYPE_METHOD(t, "body", Body);
+    Nan::SetPrototypeMethod(t, "run", Run);
+    SetPrototypeMethod(t, "body", Body);
 
-    NanAssignPersistent<Function>(s_constructor, t->GetFunction());
-    target->Set(NanNew<String>("CurlLib"),
+    s_constructor.Reset(t->GetFunction());
+    target->Set(Nan::New<String>("CurlLib").ToLocalChecked(),
                 t->GetFunction());
 
     PERSISTENT_STRING(sym_body_length, "body_length");
@@ -58,10 +58,9 @@ public:
   ~CurlLib() { }
 
   static NAN_METHOD(New) {
-    NanScope();
     CurlLib* curllib = new CurlLib();
-    curllib->Wrap(args.This());
-    NanReturnValue(args.This());
+    curllib->Wrap(info.This());
+    info.GetReturnValue().Set(info.This());
   }
 
   static size_t write_data(void *ptr, size_t size,
@@ -80,50 +79,46 @@ public:
   }
 
   static NAN_METHOD(Body) {
-    NanScope();
-
-    if (args.Length() < 1 || !Buffer::HasInstance(args[0])) {
+    if (info.Length() < 1 || !Buffer::HasInstance(info[0])) {
       return THROW_BAD_ARGS;
     }
 
-    Local<Object> buffer_obj = args[0]->ToObject();
+    Local<Object> buffer_obj = info[0]->ToObject();
     char *buffer_data        = Buffer::Data(buffer_obj);
     size_t buffer_length     = Buffer::Length(buffer_obj);
 
     if (buffer_length < buffer.size()) {
-      return NanThrowTypeError("Insufficient Buffer Length");
+      return Nan::ThrowTypeError("Insufficient Buffer Length");
     }
 
     if (!buffer.empty()) {
       memcpy(buffer_data, buffer.data(), buffer.size());
     }
     buffer.clear();
-    NanReturnValue(buffer_obj);
+    info.GetReturnValue().Set(buffer_obj);
   }
 
   static NAN_METHOD(Run) {
-    NanScope();
-
-    if (args.Length() < 1) {
+    if (info.Length() < 1) {
       return THROW_BAD_ARGS;
     }
 
-    Local<String> key_method = NanNew<String>("method");
-    Local<String> key_url = NanNew<String>("url");
-    Local<String> key_headers = NanNew<String>("headers");
-    Local<String> key_body = NanNew<String>("body");
-    Local<String> key_connect_timeout_ms = NanNew<String>("connect_timeout_ms");
-    Local<String> key_timeout_ms = NanNew<String>("timeout_ms");
-    Local<String> key_rejectUnauthorized = NanNew<String>("rejectUnauthorized");
-    Local<String> key_caCert = NanNew<String>("ca");
-    Local<String> key_clientCert = NanNew<String>("cert");
-    Local<String> key_pfx = NanNew<String>("pfx");
-    Local<String> key_clientKey = NanNew<String>("key");
-    Local<String> key_clientKeyPhrase = NanNew<String>("passphrase");
+    Local<String> key_method = Nan::New<String>("method").ToLocalChecked();
+    Local<String> key_url = Nan::New<String>("url").ToLocalChecked();
+    Local<String> key_headers = Nan::New<String>("headers").ToLocalChecked();
+    Local<String> key_body = Nan::New<String>("body").ToLocalChecked();
+    Local<String> key_connect_timeout_ms = Nan::New<String>("connect_timeout_ms").ToLocalChecked();
+    Local<String> key_timeout_ms = Nan::New<String>("timeout_ms").ToLocalChecked();
+    Local<String> key_rejectUnauthorized = Nan::New<String>("rejectUnauthorized").ToLocalChecked();
+    Local<String> key_caCert = Nan::New<String>("ca").ToLocalChecked();
+    Local<String> key_clientCert = Nan::New<String>("cert").ToLocalChecked();
+    Local<String> key_pfx = Nan::New<String>("pfx").ToLocalChecked();
+    Local<String> key_clientKey = Nan::New<String>("key").ToLocalChecked();
+    Local<String> key_clientKeyPhrase = Nan::New<String>("passphrase").ToLocalChecked();
 
-    static const Local<String> PFXFORMAT = NanNew<String>("P12");
+    static const Local<String> PFXFORMAT = Nan::New<String>("P12").ToLocalChecked();
 
-    Local<Array> opt = Local<Array>::Cast(args[0]);
+    Local<Array> opt = Local<Array>::Cast(info[0]);
 
     if (!opt->Has(key_method) ||
         !opt->Has(key_url) ||
@@ -139,12 +134,12 @@ public:
     Local<String> method = Local<String>::Cast(opt->Get(key_method));
     Local<String> url    = Local<String>::Cast(opt->Get(key_url));
     Local<Array>  reqh   = Local<Array>::Cast(opt->Get(key_headers));
-    Local<String> body   = NanNew<String>((const char*)"", 0);
-    Local<String> caCert   = NanNew<String>((const char*)"", 0);
-    Local<String> clientCert   = NanNew<String>((const char*)"", 0);
-    Local<String> clientCertFormat   = NanNew<String>((const char*)"", 0);
-    Local<String> clientKey   = NanNew<String>((const char*)"", 0);
-    Local<String> clientKeyPhrase   = NanNew<String>((const char*)"", 0);
+    Local<String> body   = Nan::New<String>((const char*)"", 0).ToLocalChecked();
+    Local<String> caCert   = Nan::New<String>((const char*)"", 0).ToLocalChecked();
+    Local<String> clientCert   = Nan::New<String>((const char*)"", 0).ToLocalChecked();
+    Local<String> clientCertFormat   = Nan::New<String>((const char*)"", 0).ToLocalChecked();
+    Local<String> clientKey   = Nan::New<String>((const char*)"", 0).ToLocalChecked();
+    Local<String> clientKeyPhrase   = Nan::New<String>((const char*)"", 0).ToLocalChecked();
     long connect_timeout_ms = 1 * 60 * 60 * 1000; /* 1 hr in msec */
     long timeout_ms = 1 * 60 * 60 * 1000; /* 1 hr in msec */
     bool rejectUnauthorized = false;
@@ -193,21 +188,21 @@ public:
 
     // std::cerr<<"rejectUnauthorized: " << rejectUnauthorized << std::endl;
 
-    NanUtf8String _body(body);
-    NanUtf8String _method(method);
-    NanUtf8String _url(url);
-    NanUtf8String _cacert(caCert);
-    NanUtf8String _clientcert(clientCert);
-    NanUtf8String _clientcertformat(clientCertFormat);
-    NanUtf8String _clientkeyphrase(clientKeyPhrase);
-    NanUtf8String _clientkey(clientKey);
+    Nan::Utf8String _body(body);
+    Nan::Utf8String _method(method);
+    Nan::Utf8String _url(url);
+    Nan::Utf8String _cacert(caCert);
+    Nan::Utf8String _clientcert(clientCert);
+    Nan::Utf8String _clientcertformat(clientCertFormat);
+    Nan::Utf8String _clientkeyphrase(clientKeyPhrase);
+    Nan::Utf8String _clientkey(clientKey);
 
     std::vector<std::string> _reqh;
     for (size_t i = 0; i < reqh->Length(); ++i) {
-      _reqh.push_back(*NanUtf8String(reqh->Get(i)));
+      _reqh.push_back(*Nan::Utf8String(reqh->Get(i)));
     }
 
-    // CurlLib* curllib = ObjectWrap::Unwrap<CurlLib>(args.This());
+    // CurlLib* curllib = ObjectWrap::Unwrap<CurlLib>(info.This());
 
     buffer.clear();
     headers.clear();
@@ -283,34 +278,34 @@ public:
 
     // std::cerr<<"error_buffer: "<<error_buffer<<std::endl;
 
-    Local<Object> result = NanNew<Object>();
+    Local<Object> result = Nan::New<Object>();
 
     if (!res) {
-      result->Set(NanNew(sym_body_length), NanNew<Integer>((int32_t)buffer.size()));
-      Local<Array> _h = NanNew<Array>();
+      result->Set(Nan::New(sym_body_length), Nan::New<Integer>((int32_t)buffer.size()));
+      Local<Array> _h = Nan::New<Array>();
       for (size_t i = 0; i < headers.size(); ++i) {
-        _h->Set(i, NanNew<String>(headers[i].c_str()));
+        _h->Set(i, Nan::New<String>(headers[i].c_str()).ToLocalChecked());
       }
-      result->Set(NanNew(sym_headers), _h);
+      result->Set(Nan::New(sym_headers), _h);
     }
     else if (res == CURLE_OPERATION_TIMEDOUT) {
-      result->Set(NanNew(sym_timedout), NanNew<Integer>(1));
+      result->Set(Nan::New(sym_timedout), Nan::New<Integer>(1));
     } else {
-      result->Set(NanNew(sym_error), NanNew<String>(curl_easy_strerror(res)));
+      result->Set(Nan::New(sym_error), Nan::New<String>(curl_easy_strerror(res)).ToLocalChecked());
     }
 
     headers.clear();
-    NanReturnValue(result);
+    info.GetReturnValue().Set(result);
   }
 };
 
-Persistent<Function> CurlLib::s_constructor;
+Nan::Persistent<Function> CurlLib::s_constructor;
 std::string CurlLib::buffer;
 std::vector<std::string> CurlLib::headers;
-Persistent<String> CurlLib::sym_body_length;
-Persistent<String> CurlLib::sym_headers;
-Persistent<String> CurlLib::sym_timedout;
-Persistent<String> CurlLib::sym_error;
+Nan::Persistent<String> CurlLib::sym_body_length;
+Nan::Persistent<String> CurlLib::sym_headers;
+Nan::Persistent<String> CurlLib::sym_timedout;
+Nan::Persistent<String> CurlLib::sym_error;
 
 extern "C" {
   static void init (Handle<Object> target) {
