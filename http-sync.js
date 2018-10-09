@@ -1,7 +1,9 @@
 var _cl = null;
 try {
-} catch (error) {}
   _cl = require('./build/Release/window_http_sync.node');
+} catch (error) {
+  console.warn('ignoring native window_http_sync require', error.stack);
+}
 
 if (_cl) {
     var caseless = require('caseless');
