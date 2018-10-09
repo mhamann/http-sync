@@ -1,7 +1,7 @@
 {
   'targets' : [
 	  {
-	    'target_name' : 'httpSync',
+	    'target_name' : 'window_http_sync',
 	    'conditions': [
 	      ['"<!(echo $LUMIN)"=="1"', {
 			    'sources' : [

@@ -1,7 +1,7 @@
 var _cl = null;
 try {
-  _cl = require('./build/Release/httpSync.node');
 } catch (error) {}
+  _cl = require('./build/Release/window_http_sync.node');
 
 if (_cl) {
     var caseless = require('caseless');
