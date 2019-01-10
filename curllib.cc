@@ -308,19 +308,10 @@ Nan::Persistent<String> CurlLib::sym_timedout;
 Nan::Persistent<String> CurlLib::sym_error;
 
 extern "C" {
-
-static void init(Handle<Object> target) {
-  CurlLib::Init(target);
-}
-#ifndef LUMIN
-NODE_MODULE(NODE_GYP_MODULE_NAME, init)
-#else
-extern "C" {
-  void node_register_module_window_http_sync(Local<Object> exports, Local<Value> module, Local<Context> context) {
-    init(exports);
+  static void init (Handle<Object> target) {
+    CurlLib::Init(target);
   }
+  NODE_MODULE(curllib, init);
 }
-#endif
-  
-}
+
 
